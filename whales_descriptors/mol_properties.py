@@ -80,6 +80,8 @@ def prepare_mol(mol, property_name, do_charge):
 
     from rdkit.Chem import AllChem as Chem
     err = 0
+    n_at = 0
+    w = None
 
     # partial charges
     if do_charge is False:
@@ -148,4 +150,3 @@ def check_mol(mol, property_name, do_charge):
         err = 1
 
     return err
-

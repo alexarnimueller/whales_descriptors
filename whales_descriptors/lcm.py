@@ -10,8 +10,8 @@
 #
 # Francesca Grisoni, May 2018, ETH Zurich & University of Milano-Bicocca, francesca.grisoni@unimib.it
 # please cite as: 
-#   Francesca Grisoni, Daniel Merk, Viviana Consonni, Jan A. Hiss, Sara Giani Tagliabue, Roberto Todeschini & Gisbert Schneider 
-#   "Scaffold hopping from natural products to synthetic mimetics by holistic molecular similarity", 
+#   Francesca Grisoni, Daniel Merk, Viviana Consonni, Jan A. Hiss, Sara Giani Tagliabue, Roberto Todeschini & Gisbert
+#   Schneider, "Scaffold hopping from natural products to synthetic mimetics by holistic molecular similarity",
 #   Nature Communications Chemistry 1, 44, 2018.
 # ======================================================================================================================
 import numpy as np
@@ -77,7 +77,6 @@ def docov(x, w):
     ETH Zurich
     """
 
-    import numpy as np
     n, p = x.shape  # dimensions
     cov = {}  # pre allocation
     samp_v = np.zeros((p, p))  # init

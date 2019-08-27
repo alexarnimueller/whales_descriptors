@@ -7,8 +7,8 @@
 #
 # Francesca Grisoni, May 2018, ETH Zurich & University of Milano-Bicocca, francesca.grisoni@unimib.it
 # please cite as: 
-#   Francesca Grisoni, Daniel Merk, Viviana Consonni, Jan A. Hiss, Sara Giani Tagliabue, Roberto Todeschini & Gisbert Schneider 
-#   "Scaffold hopping from natural products to synthetic mimetics by holistic molecular similarity", 
+#   Francesca Grisoni, Daniel Merk, Viviana Consonni, Jan A. Hiss, Sara Giani Tagliabue, Roberto Todeschini & Gisbert
+#   Schneider, "Scaffold hopping from natural products to synthetic mimetics by holistic molecular similarity",
 #   Nature Communications Chemistry 1, 44, 2018.
 # ======================================================================================================================
 
@@ -18,8 +18,8 @@ import numpy as np
 import pandas as ps
 import rdkit.Chem as Chem
 
-import lcm
-import mol_properties
+from whales_descriptors import lcm
+from whales_descriptors import mol_properties
 
 
 def main(suppl, charge_threshold=0, do_charge=True, property_name=''):
@@ -42,25 +42,21 @@ def main(suppl, charge_threshold=0, do_charge=True, property_name=''):
 
     t = time.time()  # for elapsed time
 
-    print(" ")
-    print("WHALES descriptors, v. 1.1")
-    print(" Last update: 20 July 2018")
-    print(" ")
+    print("\nWHALES descriptors, v. 1.1\n Last update: 20 July 2018\n")
 
     # initialization
     descriptors = ps.DataFrame()
-    index = 0
-    errors = 0
+    lab = list()
+    index, errors = 0, 0
 
-    print(" ")
-    print(" ... calculation started.")
     # extract molecules
+    print("\n ... calculation started.")
     for mol in suppl:  # loops over molecules
 
         # display
         index += 1
         if index % 100 == 0:
-            print 'Mol: ' + str(index)
+            print('Mol: ' + str(index))
 
         # check for correct molecule import, throw an error if import/sanitization fail
         mol, err = import_mol(mol)
@@ -68,34 +64,31 @@ def main(suppl, charge_threshold=0, do_charge=True, property_name=''):
         if err == 1:
             x = np.full((33,), -999.0)
             errors += err
-            print ('Molecule no. ' + str(index) + ' not loaded.')
+            print('Molecule no. ' + str(index) + ' not loaded.')
         else:
             # coordinates and partial charges (checks for computed charges)
             coords, w, err = mol_properties.get_coordinates_and_prop(mol, property_name, do_charge)
-            if err == 0:   # no errors in charge
+            if err == 0:  # no errors in charge
                 # does descriptors
                 x, lab = do_lcd(coords, w, charge_threshold)
             else:
                 x = np.full((33,), -999.0)
                 errors += 1
-                print ('Molecule no. ' + str(index) + ': no computed charges.')
+                print('Molecule no. ' + str(index) + ': no computed charges.')
 
         # stores the molecular descriptors
         descriptors[str(index)] = x
 
     # display time
-    elapsed = time.time() - t
-    print('Time elapsed ' + str(round(elapsed, 0)) + ' seconds.')
+    print('Time elapsed ' + str(round(time.time() - t, 0)) + ' seconds.')
     descriptors = ps.DataFrame.transpose(descriptors)
 
-    # display errors
-    if errors > 0:
-        print (str(errors) + ' molecules not loaded/calculated')
+    if errors > 0:  # display errors
+        print(str(errors) + ' molecules not loaded/calculated')
 
     return descriptors, lab
 
 
-# ----------------------------------------------------------------------------------------------------------------------
 def import_mol(mol):
     # options for sanitization
     san_opt = Chem.SanitizeFlags.SANITIZE_ALL ^ Chem.SanitizeFlags.SANITIZE_KEKULIZE
@@ -105,24 +98,21 @@ def import_mol(mol):
 
     if mol is None:
         err = 1
-    else:
-        # sanitize
+    else:  # sanitize
         sanit_fail = Chem.SanitizeMol(mol, catchErrors=True, sanitizeOps=san_opt)
         if sanit_fail:
             raise ValueError(sanit_fail)
-            err = 1
 
     return mol, err
 
 
-# ----------------------------------------------------------------------------------------------------------------------
 def do_lcd(coords, w, thr):
     """
     Core function for computing 3D LCD descriptors, starting from the coordinates and the partial charges.
     :param coords: molecular 3D coordinate matrix (n_at x 3)
     w(n_at x 1): molecular property to consider
     :param w: partial charges
-    :param lcm_thr: threshold to be used to retain atoms (e.g., 0.001)
+    :param thr: threshold to be used to retain atoms (e.g., 0.001)
     :return:
     x_all: descriptors  for the molecules (1 x p)
     lab_all: descriptors labels (1 x p)
@@ -139,7 +129,6 @@ def do_lcd(coords, w, thr):
     return x_all, lab_all
 
 
-# ----------------------------------------------------------------------------------------------------------------------
 def apply_sign(w, res, thr=0):
     """
     applies the sign to negatively charged atoms.
@@ -160,7 +149,6 @@ def apply_sign(w, res, thr=0):
     return res
 
 
-# ----------------------------------------------------------------------------------------------------------------------
 def extract_lcm(data, start=0, end=100, step=10, lab_string=''):
     """
     extracts descriptors referred to the whole molecule from numbers referred to atoms, e.g., R and I.
@@ -178,19 +166,16 @@ def extract_lcm(data, start=0, end=100, step=10, lab_string=''):
     """
 
     # Calculates percentiles according to the specified settings
-    perc = range(start, end + 1, step)
-    x = np.percentile(data, list(perc), axis=0)
-    x = np.concatenate((x[:, 0], x[:, 1], x[:, 2]), axis=0)  # Flattens preserving the ordering
-
-    # rounds the descriptors to the third decimal place
-    x = np.round(x, 3)
+    perc = list(range(start, end + 1, step))
+    x = np.percentile(data, perc, axis=0)
+    x = np.concatenate((x[:, 0], x[:, 1], x[:, 2]), axis=0)  # flattens preserving the ordering
+    x = np.round(x, 3)  # rounds the descriptors to the third decimal place
 
     # produces labels strings
     strings = ['R_', 'I_', 'IR_']
     labels = list()
     for j in strings:
         for i in perc:
-            labels.append(j + lab_string + str(i / 10))
+            labels.append(j + lab_string + str(i / step))
 
     return x, labels
-
